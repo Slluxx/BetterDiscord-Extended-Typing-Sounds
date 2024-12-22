@@ -1,0 +1,2 @@
+# BetterDiscord Extended Typing Sounds
+ 
