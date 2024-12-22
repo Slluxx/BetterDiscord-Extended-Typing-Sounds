@@ -137,11 +137,11 @@ class Settings {
     }
 
     load() {
-        this.data = { ...this.data, ...BdApi.Data.load("atypesound", "settings") };
+        this.data = { ...this.data, ...BdApi.Data.load("ExtendedTypingSounds", "settings") };
     }
 
     save() {
-        BdApi.Data.save("atypesound", "settings", this.data);
+        BdApi.Data.save("ExtendedTypingSounds", "settings", this.data);
     }
 
     GetUpdatePanelData() {
@@ -175,7 +175,6 @@ class AudioManager {
         document.body.appendChild(container)
 
 
-        // 
         fetch('https://cdn.jsdelivr.net/gh/Slluxx/BetterDiscord-Extended-Typing-Sounds@main/sounds/' + this.soundtype + '/config.json')
             .then(response => {
                 if (!response.ok) {
