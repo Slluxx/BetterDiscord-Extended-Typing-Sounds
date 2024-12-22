@@ -1,0 +1,282 @@
+/**
+ * @name Extended Typing Sounds
+ * @author SLX
+ * @authorLink https://github.com/Slluxx
+ * @description Play different click sounds when you press a key. Supports multiple keyboard sounds
+ * @version 1.0.0
+ * @donate https://www.paypal.me/sllxx
+ * @source https://github.com/Slluxx/BetterDiscord-Extended-Typing-Sounds/tree/main
+ * @updateUrl https://raw.githubusercontent.com/Slluxx/BetterDiscord-Extended-Typing-Sounds/refs/heads/main/ExtendedTypingSounds.plugin.js
+ */
+
+const keyList = {
+    'Escape': 1,
+    'F1': 59,
+    'F2': 60,
+    'F3': 61,
+    'F4': 62,
+    'F5': 63,
+    'F6': 64,
+    'F7': 65,
+    'F8': 66,
+    'F9': 67,
+    'F10': 68,
+    'F11': 87,
+    'F12': 88,
+    'F13': 91,
+    'F14': 92,
+    'F15': 93,
+
+    'Backquote': 41,
+    'Digit1': 2,
+    'Digit2': 3,
+    'Digit3': 4,
+    'Digit4': 5,
+    'Digit5': 6,
+    'Digit6': 7,
+    'Digit7': 8,
+    'Digit8': 9,
+    'Digit9': 10,
+    'Digit0': 11,
+    'Minus': 12,
+    'Equal': 13,
+    'Backspace': 14,
+
+    'KeyA': 30,
+    'KeyB': 48,
+    'KeyC': 46,
+    'KeyD': 32,
+    'KeyE': 18,
+    'KeyF': 33,
+    'KeyG': 34,
+    'KeyH': 35,
+    'KeyI': 23,
+    'KeyJ': 36,
+    'KeyK': 37,
+    'KeyL': 38,
+    'KeyM': 50,
+    'KeyN': 49,
+    'KeyO': 24,
+    'KeyP': 25,
+    'KeyQ': 16,
+    'KeyR': 19,
+    'KeyS': 31,
+    'KeyT': 20,
+    'KeyU': 22,
+    'KeyV': 47,
+    'KeyW': 17,
+    'KeyX': 45,
+    'KeyY': 21,
+    'KeyZ': 44,
+
+    'Tab': 15,
+    'CapsLock': 58,
+    'ShiftLeft': 42,
+    'ControlLeft': 29,
+    'MetaLeft': 3675,
+    'AltLeft': 56,
+    'Semicolon': 18,
+    'BracketLeft': 19,
+    'Quote': 20,
+    ';': 39,
+    "'": 40,
+    'Enter': 28,
+    'Comma': 51,
+    'Period': 52,
+    'Slash': 53,
+    'Space': 57,
+    'PrintScreen': 3639,
+    'ScrollLock': 70,
+    'Pause': 3653,
+    'Insert': 3666,
+    'Delete': 3667,
+    'Home': 3655,
+    'End': 3663,
+    'PageUp': 3657,
+    'PageDown': 3665,
+    'ArrowUp': 57416,
+    'ArrowLeft': 57419,
+    'ArrowRight': 57421,
+    'ArrowDown': 57424,
+    'ShiftRight': 42,
+    'ControlRight': 29,
+    'AltRight': 56,
+}
+
+class Settings {
+    constructor() {
+        this.data = {}
+        this.data["volume"] = 50
+        this.data["selectedSound"] = "cherrymx-blue-abs"
+
+        this.load();
+
+        this.panel = [
+            { type: "slider", id: "volume", name: "Volume", note: "Adjust the volume of the sounds", value: 30, min: 0, max: 100 },
+            {
+                type: "dropdown",
+                id: "selectedSound",
+                name: "Basic Dropdown",
+                note: "Change the type of sound a click makes.",
+                value: "cherrymx-blue-abs",
+                options: [
+                    { label: "CherryMX Black - ABS keycaps", value: "cherrymx-black-abs" },
+                    { label: "CherryMX Black - PBT keycaps", value: "cherrymx-black-pbt" },
+                    { label: "CherryMX Blue - ABS keycaps", value: "cherrymx-blue-abs" },
+                    { label: "CherryMX Blue - PBT keycaps", value: "cherrymx-blue-pbt" },
+                    { label: "CherryMX Brown - ABS keycaps", value: "cherrymx-brown-abs" },
+                    { label: "CherryMX Brown - PBT keycaps", value: "cherrymx-brown-pbt" },
+                    { label: "CherryMX Red - ABS keycaps", value: "cherrymx-red-abs" },
+                    { label: "CherryMX Red - PBT keycaps", value: "cherrymx-red-pbt" },
+                    { label: "EG Crystal Purple", value: "eg-crystal-purple" },
+                    { label: "EG Oreo", value: "eg-oreo" },
+                    { label: "Topre Purple Hybrid - PBT keycaps", value: "topre-purple-hybrid-pbt" },
+                ]
+            },
+        ]
+    }
+
+    load() {
+        this.data = { ...this.data, ...BdApi.Data.load("atypesound", "settings") };
+    }
+
+    save() {
+        BdApi.Data.save("atypesound", "settings", this.data);
+    }
+
+    GetUpdatePanelData() {
+        Object.keys(this.data).forEach(key => {
+            let setting = this.panel.find((item) => item.id === key);
+            setting.value = this.data[key]
+        })
+        return this.panel;
+    }
+}
+
+class AudioManager {
+    constructor(volume, soundtype) {
+        this.volume = volume
+        this.soundtype = soundtype
+
+        this.ready = false
+
+        this.audio = new Audio('https://github.com/Slluxx/BetterDiscord-Extended-Typing-Sounds/raw/refs/heads/main/sounds/' + this.soundtype + '/sound.ogg');
+        this.maxAudioInstances = 5;
+
+        if (document.getElementById("ETS") != null) this.cleanup();
+        let container = document.createElement("div")
+        container.id = "ETS"
+
+        for (let i = 0; i < this.maxAudioInstances; i++) {
+            let audioClone = this.audio.cloneNode();
+            audioClone.volume = this.volume;
+            container.appendChild(audioClone)
+        }
+        document.body.appendChild(container)
+
+
+        // 
+        fetch('https://cdn.jsdelivr.net/gh/Slluxx/BetterDiscord-Extended-Typing-Sounds@main/sounds/' + this.soundtype + '/config.json')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                this.defines = data["defines"];
+                this.ready = true;
+                console.log("Audiomanager ready")
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+
+    cleanup() {
+        let container = document.getElementById("ETS");
+        if (container) container.remove();
+    }
+
+    getAvailableAudio() {
+        const container = document.getElementById("ETS");
+        if (!container) {
+            console.error("Audio container not found");
+            return null;
+        }
+
+        const audioElements = container.getElementsByTagName("audio");
+
+        for (let i = 0; i < audioElements.length; i++) {
+            const audio = audioElements[i];
+            if (audio.paused || audio.ended) {
+                return audio;
+            }
+        }
+
+        return audioElements[0] || null;
+    }
+
+    async play(from, to) {
+        const clonedAudio = this.getAvailableAudio();
+        clonedAudio.currentTime = from
+        await clonedAudio.play(); // Ensures play() is awaited
+        setTimeout(function () {
+            clonedAudio.pause();
+        }, to);
+    }
+}
+
+module.exports = class ExtendedTypingSounds {
+
+    start() {
+        this.settings = new Settings();
+        this.audiomanager = new AudioManager(this.settings.data["volume"] / 100, this.settings.data["selectedSound"]);
+        this.boundHandleKeydown = this.handleKeydown.bind(this);
+        document.addEventListener('keydown', this.boundHandleKeydown);
+    }
+
+
+    stop() {
+        document.removeEventListener('keydown', this.boundHandleKeydown);
+        this.audiomanager.cleanup();
+        this.settings = null;
+        this.audiomanager = null;
+    }
+
+    getSettingsPanel() {
+        return BdApi.UI.buildSettingsPanel({
+            settings: this.settings.GetUpdatePanelData(),
+            onChange: (category, id, value) => {
+                this.settings.data[id] = value;
+
+                if (this.saveTimer) {
+                    clearTimeout(this.saveTimer);
+                }
+
+                this.saveTimer = setTimeout(() => {
+                    this.settings.save()
+                    this.stop()
+                    this.start()
+                }, 1000);
+            },
+        });
+    }
+
+    async handleKeydown(event) {
+        const index = keyList[event.code] || false;
+        if (index) {
+            // BdApi.alert("EVENT", "Key has been clicked: " + index);
+        } else {
+            // console.log("Not found", event.code)
+            // BdApi.alert("EVENT", "Key does not exist: " + index);
+            return;
+        }
+
+        if (this.audiomanager.ready == false) return;
+
+        let from = this.audiomanager.defines[index][0] / 1000
+        let to = this.audiomanager.defines[index][1]
+        this.audiomanager.play(from, to);
+    }
+}
