@@ -3,7 +3,7 @@
  * @author SLX
  * @authorLink https://github.com/Slluxx
  * @description Play different click sounds when you press a key. Supports multiple keyboard sounds
- * @version 1.0.0
+ * @version 1.0.1
  * @donate https://www.paypal.me/sllxx
  * @source https://github.com/Slluxx/BetterDiscord-Extended-Typing-Sounds/tree/main
  * @updateUrl https://raw.githubusercontent.com/Slluxx/BetterDiscord-Extended-Typing-Sounds/refs/heads/main/ExtendedTypingSounds.plugin.js
