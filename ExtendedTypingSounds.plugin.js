@@ -40,7 +40,7 @@ const keyList = {
     'Digit0': 11,
     'Minus': 12,
     'Equal': 13,
-    'Backspace': 14,
+    'Backspace': 8,
 
     'KeyA': 30,
     'KeyB': 48,
@@ -101,6 +101,10 @@ const keyList = {
     'ShiftRight': 42,
     'ControlRight': 29,
     'AltRight': 56,
+
+    'BracketRight': 19,
+    'Backslash': 53,
+    'IntlBackslash': 53
 }
 
 class Settings {
@@ -147,7 +151,7 @@ class Settings {
     GetUpdatePanelData() {
         Object.keys(this.data).forEach(key => {
             let setting = this.panel.find((item) => item.id === key);
-            setting.value = this.data[key]
+            if (setting) setting.value = this.data[key]
         })
         return this.panel;
     }
@@ -216,10 +220,12 @@ class AudioManager {
         return audioElements[0] || null;
     }
 
-    async play(from, to) {
+    async play(index) {
+        let from = this.defines[index][0] / 1000
+        let to = this.defines[index][1]
         const clonedAudio = this.getAvailableAudio();
         clonedAudio.currentTime = from
-        await clonedAudio.play(); // Ensures play() is awaited
+        await clonedAudio.play();
         setTimeout(function () {
             clonedAudio.pause();
         }, to);
@@ -232,12 +238,17 @@ module.exports = class ExtendedTypingSounds {
         this.settings = new Settings();
         this.audiomanager = new AudioManager(this.settings.data["volume"] / 100, this.settings.data["selectedSound"]);
         this.boundHandleKeydown = this.handleKeydown.bind(this);
+        this.boundHandleClick = this.handleClick.bind(this);
         document.addEventListener('keydown', this.boundHandleKeydown);
+        document.addEventListener('click', this.boundHandleClick);
     }
 
 
     stop() {
+        let searchbar = document.getElementsByClassName("DraftEditor-root");
+        if (searchbar.length != 1) searchbar[0].removeEventListener('keydown', this.boundHandleKeydown);
         document.removeEventListener('keydown', this.boundHandleKeydown);
+
         this.audiomanager.cleanup();
         this.settings = null;
         this.audiomanager = null;
@@ -265,7 +276,7 @@ module.exports = class ExtendedTypingSounds {
     async handleKeydown(event) {
         const index = keyList[event.code] || false;
         if (index) {
-            // BdApi.alert("EVENT", "Key has been clicked: " + index);
+            // console.log("EVENT", "Key has been clicked: " + index);
         } else {
             // console.log("Not found", event.code)
             // BdApi.alert("EVENT", "Key does not exist: " + index);
@@ -273,9 +284,16 @@ module.exports = class ExtendedTypingSounds {
         }
 
         if (this.audiomanager.ready == false) return;
+        
+        this.audiomanager.play(index);
+    }
 
-        let from = this.audiomanager.defines[index][0] / 1000
-        let to = this.audiomanager.defines[index][1]
-        this.audiomanager.play(from, to);
+    async handleClick(event) {
+        // as per: https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
+        // this is fine as multiple eventhandlers are simply discarded.
+        // The seachbar is not in the DOM when discord start up the first time and i dont want to check using any kind of loop.
+        let searchbar = document.getElementsByClassName("DraftEditor-root")
+        if (searchbar.length == 0) return;
+        searchbar[0].addEventListener('keydown', this.boundHandleKeydown);
     }
 }
