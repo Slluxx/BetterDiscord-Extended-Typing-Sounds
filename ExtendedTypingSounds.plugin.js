@@ -3,7 +3,7 @@
  * @author SLX
  * @authorLink https://github.com/Slluxx
  * @description Play different click sounds when you press a key. Supports multiple keyboard sounds
- * @version 1.0.1
+ * @version 1.0.2
  * @donate https://www.paypal.me/sllxx
  * @source https://github.com/Slluxx/BetterDiscord-Extended-Typing-Sounds/tree/main
  * @updateUrl https://raw.githubusercontent.com/Slluxx/BetterDiscord-Extended-Typing-Sounds/refs/heads/main/ExtendedTypingSounds.plugin.js
@@ -246,7 +246,7 @@ module.exports = class ExtendedTypingSounds {
 
     stop() {
         let searchbar = document.getElementsByClassName("DraftEditor-root");
-        if (searchbar.length != 1) searchbar[0].removeEventListener('keydown', this.boundHandleKeydown);
+        if (searchbar.length != 0) searchbar[0].removeEventListener('keydown', this.boundHandleKeydown);
         document.removeEventListener('keydown', this.boundHandleKeydown);
 
         this.audiomanager.cleanup();
@@ -293,7 +293,6 @@ module.exports = class ExtendedTypingSounds {
         // this is fine as multiple eventhandlers are simply discarded.
         // The seachbar is not in the DOM when discord start up the first time and i dont want to check using any kind of loop.
         let searchbar = document.getElementsByClassName("DraftEditor-root")
-        if (searchbar.length == 0) return;
-        searchbar[0].addEventListener('keydown', this.boundHandleKeydown);
+        if (searchbar.length != 0) searchbar[0].addEventListener('keydown', this.boundHandleKeydown);
     }
 }
