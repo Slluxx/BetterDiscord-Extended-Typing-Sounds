@@ -3,7 +3,7 @@
  * @author SLX
  * @authorLink https://github.com/Slluxx
  * @description Play different click sounds when you press a key. Supports multiple keyboard sounds
- * @version 1.0.2
+ * @version 1.0.3
  * @donate https://www.paypal.me/sllxx
  * @source https://github.com/Slluxx/BetterDiscord-Extended-Typing-Sounds/tree/main
  * @updateUrl https://raw.githubusercontent.com/Slluxx/BetterDiscord-Extended-Typing-Sounds/refs/heads/main/ExtendedTypingSounds.plugin.js
@@ -237,21 +237,35 @@ module.exports = class ExtendedTypingSounds {
     start() {
         this.settings = new Settings();
         this.audiomanager = new AudioManager(this.settings.data["volume"] / 100, this.settings.data["selectedSound"]);
+        
+        // Track which keys are currently pressed to prevent repeat sounds
+        this.pressedKeys = new Set();
+        
         this.boundHandleKeydown = this.handleKeydown.bind(this);
+        this.boundHandleKeyup = this.handleKeyup.bind(this);
         this.boundHandleClick = this.handleClick.bind(this);
+        
         document.addEventListener('keydown', this.boundHandleKeydown);
+        document.addEventListener('keyup', this.boundHandleKeyup);
         document.addEventListener('click', this.boundHandleClick);
     }
 
 
     stop() {
         let searchbar = document.getElementsByClassName("DraftEditor-root");
-        if (searchbar.length != 0) searchbar[0].removeEventListener('keydown', this.boundHandleKeydown);
+        if (searchbar.length != 0) {
+            searchbar[0].removeEventListener('keydown', this.boundHandleKeydown);
+            searchbar[0].removeEventListener('keyup', this.boundHandleKeyup);
+        }
+        
         document.removeEventListener('keydown', this.boundHandleKeydown);
+        document.removeEventListener('keyup', this.boundHandleKeyup);
+        document.removeEventListener('click', this.boundHandleClick);
 
         this.audiomanager.cleanup();
         this.settings = null;
         this.audiomanager = null;
+        this.pressedKeys = null;
     }
 
     getSettingsPanel() {
@@ -274,18 +288,36 @@ module.exports = class ExtendedTypingSounds {
     }
 
     async handleKeydown(event) {
-        const index = keyList[event.code] || false;
-        if (index) {
-            // console.log("EVENT", "Key has been clicked: " + index);
-        } else {
-            // console.log("Not found", event.code)
-            // BdApi.alert("EVENT", "Key does not exist: " + index);
+        const keyCode = event.code;
+        const index = keyList[keyCode] || false;
+        
+        // Check if key exists in our keyList
+        if (!index) {
+            // console.log("Not found", keyCode)
             return;
         }
 
+        // Check if this key is already pressed (held down)
+        if (this.pressedKeys.has(keyCode)) {
+            // Key is being held, don't play sound again
+            return;
+        }
+
+        // Mark key as pressed
+        this.pressedKeys.add(keyCode);
+
+        // Check if audiomanager is ready
         if (this.audiomanager.ready == false) return;
         
+        // Play the sound for the initial key press
         this.audiomanager.play(index);
+    }
+
+    async handleKeyup(event) {
+        const keyCode = event.code;
+        
+        // Remove key from pressed keys set when released
+        this.pressedKeys.delete(keyCode);
     }
 
     async handleClick(event) {
@@ -293,6 +325,9 @@ module.exports = class ExtendedTypingSounds {
         // this is fine as multiple eventhandlers are simply discarded.
         // The seachbar is not in the DOM when discord start up the first time and i dont want to check using any kind of loop.
         let searchbar = document.getElementsByClassName("DraftEditor-root")
-        if (searchbar.length != 0) searchbar[0].addEventListener('keydown', this.boundHandleKeydown);
+        if (searchbar.length != 0) {
+            searchbar[0].addEventListener('keydown', this.boundHandleKeydown);
+            searchbar[0].addEventListener('keyup', this.boundHandleKeyup);
+        }
     }
 }
